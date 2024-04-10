@@ -3,8 +3,8 @@ import numpy as np
 
 scale = 0.95 # image size
 smoothing_window = 6  # Moving average. Typ: 6
-lower_blue = np.array([80, 10, 10]) # color in HSV
-upper_blue = np.array([120, 255, 255]) # color in HSV
+lower_blue = np.array([85, 10, 10]) # color in HSV
+upper_blue = np.array([110, 255, 255]) # color in HSV
 potential_edge = 100
 strong_edge = 100
 angle_buffer = []
@@ -37,9 +37,9 @@ while True:
 	# Convert frame to grayscale
 	gray = cv2.cvtColor(blue_areas, cv2.COLOR_BGR2GRAY)
 	edges = cv2.Canny(gray, potential_edge, strong_edge)
-	# cv2.imshow('Edges Window', edges)
+	cv2.imshow('Edges Window', edges)
 	# Perform Hough Transform to detect lines
-	lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 80, minLineLength=40, maxLineGap=computational_window_width)
+	lines = cv2.HoughLinesP(edges, .2, np.pi / 180, 5, minLineLength=100, maxLineGap=computational_window_width)
 	# Visualize edge detection and Hough Transform
 	if lines is not None:
 		hough_frame = small_frame.copy()  # Create a copy of the original frame for visualization
