@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-scale = 1.2 # image size
+scale = 1.3 # image size
 smoothing_window = 6  # Moving average. Typ: 6
 lower_blue = np.array([90, 20, 20]) # color in HSV
 upper_blue = np.array([110, 255, 255]) # color in HSV
@@ -24,22 +24,31 @@ while True:
 	ret, original_frame = cap.read()
 	# Resize the frame to half its size
 	desired_height = int(computational_window_width * 9 / 16)
-
 	small_frame = cv2.resize(original_frame, (computational_window_width, desired_height), interpolation=cv2.INTER_LINEAR)
 	if not ret:
 		break
 	# Convert BGR to HSV
 	hsv_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2HSV)
-	# Threshold the HSV frame to get only blue colors
-	mask = cv2.inRange(hsv_frame, lower_blue, upper_blue)
+
+	mask1 = cv2.inRange(hsv_frame, lower_blue, upper_blue) # Threshold the HSV frame to get only blue colors
+	duplicated_mask1 = mask1.copy()
+	rows, cols = duplicated_mask1.shape
+	M = np.float32([[1, 0, 0], [0, 1, -40]])  # Translation matrix for 10 pixels down
+	translated_mask1 = cv2.warpAffine(duplicated_mask1, M, (cols, rows))
+	# Add the translated mask to the original mask
+	mask2 = cv2.bitwise_and(mask1, translated_mask1)
+
+
+
+
 	# Bitwise-AND mask and original frame
-	blue_areas = cv2.bitwise_and(small_frame, small_frame, mask=mask)
+	blue_areas = cv2.bitwise_and(small_frame, small_frame, mask=mask2)
 	# Convert frame to grayscale
 	gray = cv2.cvtColor(blue_areas, cv2.COLOR_BGR2GRAY)
 	edges = cv2.Canny(gray, potential_edge, strong_edge)
-	cv2.imshow('Edges Window', mask)
+	cv2.imshow('Edges Window', mask2)
 	# Perform Hough Transform to detect lines
-	lines = cv2.HoughLinesP(edges, .8, np.pi / 180, 65, minLineLength=75, maxLineGap=computational_window_width)
+	lines = cv2.HoughLinesP(edges, .8, np.pi / 180, 75, minLineLength=75, maxLineGap=computational_window_width)
 	# Visualize edge detection and Hough Transform
 	if lines is not None:
 		hough_frame = small_frame.copy()  # Create a copy of the original frame for visualization
