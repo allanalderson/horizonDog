@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-scale = 1.3 # image size
+scale = 1.2 # image size
 smoothing_window = 6  # Moving average. Typ: 6
 lower_blue = np.array([90, 20, 20]) # color in HSV
 upper_blue = np.array([110, 255, 255]) # color in HSV
