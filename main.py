@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 
-scale = 1.2 # image size
-smoothing_window = 6  # Moving average. Typ: 6
+scale = 1.5 # image size
+smoothing_window = 7  # Moving average. Typ: 7
 lower_blue = np.array([90, 20, 20]) # color in HSV
 upper_blue = np.array([110, 255, 255]) # color in HSV
 potential_edge = 5
@@ -48,7 +48,7 @@ while True:
 	edges = cv2.Canny(gray, potential_edge, strong_edge)
 	cv2.imshow('Edges Window', mask2)
 	# Perform Hough Transform to detect lines
-	lines = cv2.HoughLinesP(edges, .8, np.pi / 180, 75, minLineLength=75, maxLineGap=computational_window_width)
+	lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 60, minLineLength=70, maxLineGap=computational_window_width)
 	# Visualize edge detection and Hough Transform
 	if lines is not None:
 		hough_frame = small_frame.copy()  # Create a copy of the original frame for visualization
