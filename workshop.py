@@ -33,7 +33,7 @@ while True:
 	mask1 = cv2.inRange(hsv_frame, lower_blue, upper_blue) # Threshold the HSV frame to get only blue colors
 	duplicated_mask1 = mask1.copy()
 	rows, cols = duplicated_mask1.shape
-	M = np.float32([[1, 0, 0], [0, 1, -40]])  # Translation matrix for 10 pixels down
+	M = np.float32([[1, 0, 0], [0, 1, -10]])  # Translation matrix for 10 pixels down
 	translated_mask1 = cv2.warpAffine(duplicated_mask1, M, (cols, rows))
 	# Add the translated mask to the original mask
 	mask2 = cv2.bitwise_and(mask1, translated_mask1)
@@ -48,7 +48,7 @@ while True:
 	edges = cv2.Canny(gray, potential_edge, strong_edge)
 	cv2.imshow('Edges Window', mask2)
 	# Perform Hough Transform to detect lines
-	lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 50, minLineLength=70, maxLineGap=computational_window_width)
+	lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 50, minLineLength=100, maxLineGap=100)
 	# Visualize edge detection and Hough Transform
 	if lines is not None:
 		hough_frame = small_frame.copy()  # Create a copy of the original frame for visualization
@@ -59,8 +59,7 @@ while True:
 		cv2.imshow('Hough Transform Window', hough_frame)
 
 
-	# Avarage the detected lines
-	if lines is not None:
+
 		total_angle = 0
 		num_lines = 0
 		total_x1, total_y1, total_x2, total_y2 = 0, 0, 0, 0
@@ -75,7 +74,6 @@ while True:
 		avg_y1 = total_y1 / num_lines
 		avg_x2 = total_x2 / num_lines
 		avg_y2 = total_y2 / num_lines
-
 	# Check if avg line is approximately horizontal
 		if abs(avg_y2 - avg_y1) < 180:
 			angle = np.arctan2(avg_y2 - avg_y1, avg_x2 - avg_x1) * 180 / np.pi
