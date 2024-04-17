@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 
-scale = .9 # image size
-smoothing_window = 6  # Moving average. Typ: 6
+scale = .7 # image size
+smoothing_window = 5  # Moving average. Typ: 5
 lower_blue = np.array([90, 20, 20]) # color in HSV
 upper_blue = np.array([110, 255, 255]) # color in HSV
 potential_edge = 5
@@ -29,7 +29,6 @@ while True:
 		break
 	# Convert BGR to HSV
 	hsv_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2HSV)
-
 	mask1 = cv2.inRange(hsv_frame, lower_blue, upper_blue) # Threshold the HSV frame to get only blue colors
 	duplicated_mask1 = mask1.copy()
 	rows, cols = duplicated_mask1.shape
@@ -37,10 +36,6 @@ while True:
 	translated_mask1 = cv2.warpAffine(duplicated_mask1, M, (cols, rows))
 	# Add the translated mask to the original mask
 	mask2 = cv2.bitwise_and(mask1, translated_mask1)
-
-
-
-
 	# Bitwise-AND mask and original frame
 	blue_areas = cv2.bitwise_and(small_frame, small_frame, mask=mask2)
 	# Convert frame to grayscale
@@ -48,23 +43,21 @@ while True:
 	edges = cv2.Canny(gray, potential_edge, strong_edge)
 	cv2.imshow('Edges Window', mask2)
 	# Perform Hough Transform to detect lines
-	lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 50, minLineLength=100, maxLineGap=100)
+	hough_lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 65, minLineLength=100, maxLineGap=100)
 	# Visualize edge detection and Hough Transform
-	if lines is not None:
+	if hough_lines is not None:
 		hough_frame = small_frame.copy()  # Create a copy of the original frame for visualization
 		# hough_frame[:] = 0  # Set all pixels to black
-		for line in lines:
+		for line in hough_lines:
 			x1, y1, x2, y2 = line[0]
 			cv2.line(hough_frame, (x1, y1), (x2, y2), (0, 0, 255), 1)  # Draw detected lines on the copy of the frame
 		cv2.imshow('Hough Transform Window', hough_frame)
-
-
-
+		# calculate an average line from the lines
 		total_angle = 0
 		num_lines = 0
 		total_x1, total_y1, total_x2, total_y2 = 0, 0, 0, 0
-		num_lines = len(lines)
-		for line in lines:
+		num_lines = len(hough_lines)
+		for line in hough_lines:
 			x1, y1, x2, y2 = line[0]
 			total_x1 += x1
 			total_y1 += y1
@@ -74,24 +67,21 @@ while True:
 		avg_y1 = total_y1 / num_lines
 		avg_x2 = total_x2 / num_lines
 		avg_y2 = total_y2 / num_lines
-	# Check if avg line is approximately horizontal
-		if abs(avg_y2 - avg_y1) < 180:
-			angle = np.arctan2(avg_y2 - avg_y1, avg_x2 - avg_x1) * 180 / np.pi
-			angle_buffer.append(angle)
-			if len(angle_buffer) > smoothing_window:
-				angle_buffer.pop(0)
-			# Calculate the average angle from the buffer
-			smoothed_average_angle = sum(angle_buffer) / len(angle_buffer)
+		angle = np.arctan2(avg_y2 - avg_y1, avg_x2 - avg_x1) * 180 / np.pi
+		angle_buffer.append(angle)
+		if len(angle_buffer) > smoothing_window:
+			angle_buffer.pop(0)
+		# Calculate the average angle from the buffer
+		smoothed_average_angle = sum(angle_buffer) / len(angle_buffer)
 	else:
 		# print("No lines ")
 		smoothed_average_angle = 0
-
+	# rotate the frame
 	rotated_frame = rotate_image(original_frame, smoothed_average_angle)
-	# Display the rotated frame
 	cv2.imshow('Result', rotated_frame)
+
 	# Break the loop if 'q' is pressed
 	if cv2.waitKey(1) & 0xFF == ord('q'):
 		break
-
 cap.release()
 cv2.destroyAllWindows()
