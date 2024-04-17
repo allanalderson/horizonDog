@@ -78,7 +78,35 @@ while True:
 		smoothed_average_angle = 0
 	# rotate the frame
 	rotated_frame = rotate_image(original_frame, smoothed_average_angle)
-	cv2.imshow('Result', rotated_frame)
+
+	prev_frame = None
+	prev_points = None
+
+
+	# Convert the frame to grayscale
+	gray = cv2.cvtColor(rotated_frame, cv2.COLOR_BGR2GRAY)
+
+	# Perform motion estimation between current and previous frame
+	if prev_frame is not None:
+		flow = cv2.calcOpticalFlowFarneback(prev_frame, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+		flow = -flow
+
+		# Apply the motion to the frame
+		h, w = flow.shape[:2]
+		flow_map = np.column_stack((flow[:, :, 0] + np.arange(w), flow[:, :, 1] + np.arange(h)[:, np.newaxis])).astype(np.float32)
+		stabilized_frame = cv2.remap(rotated_frame, flow_map, None, cv2.INTER_LINEAR)
+	else:
+		stabilized_frame = rotated_frame
+
+
+
+	cv2.imshow('Result', stabilized_frame)
+
+	# Update variables for next iteration
+	prev_frame = gray
+
+
+
 
 	# Break the loop if 'q' is pressed
 	if cv2.waitKey(1) & 0xFF == ord('q'):
