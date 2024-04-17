@@ -10,6 +10,7 @@ strong_edge = 95
 angle_buffer = []
 smoothed_average_angle = 0
 computational_window_width = 600 # Default 600
+prev_frame = None
 def rotate_image(image, angle):
 	(h, w) = image.shape[:2]
 	center = (w // 2, h // 2)
@@ -79,34 +80,32 @@ while True:
 	# rotate the frame
 	rotated_frame = rotate_image(original_frame, smoothed_average_angle)
 
-	prev_frame = None
-	prev_points = None
-
-
 	# Convert the frame to grayscale
 	gray = cv2.cvtColor(rotated_frame, cv2.COLOR_BGR2GRAY)
 
 	# Perform motion estimation between current and previous frame
 	if prev_frame is not None:
 		flow = cv2.calcOpticalFlowFarneback(prev_frame, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-		flow = -flow
 
 		# Apply the motion to the frame
 		h, w = flow.shape[:2]
-		flow_map = np.column_stack((flow[:, :, 0] + np.arange(w), flow[:, :, 1] + np.arange(h)[:, np.newaxis])).astype(np.float32)
+		xx, yy = np.meshgrid(np.arange(w), np.arange(h))
+		flow_map = np.stack([xx + flow[..., 0], yy + flow[..., 1]], axis=-1).astype(np.float32)
+
+		# Print the shape and data type of flow_map
+		print("Shape of flow_map:", flow_map.shape)
+		print("Data type of flow_map:", flow_map.dtype)
+
+		# Apply the remapping
 		stabilized_frame = cv2.remap(rotated_frame, flow_map, None, cv2.INTER_LINEAR)
 	else:
 		stabilized_frame = rotated_frame
 
-
-
+	# Display the result
 	cv2.imshow('Result', stabilized_frame)
 
-	# Update variables for next iteration
+	# Update variables for the next iteration
 	prev_frame = gray
-
-
-
 
 	# Break the loop if 'q' is pressed
 	if cv2.waitKey(1) & 0xFF == ord('q'):
